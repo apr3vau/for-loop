@@ -23,7 +23,7 @@ list of symbols to be inserted into final `LOOP'."
          (tail r)
          last-do-p this-do-p)
     (flet ((collect (&rest items)
-             (dolist (i (if (and andp (cdr r))
+             (dolist (i (if (and andp (cdr r) (null this-do-p))
                             (cons :and items)
                           items))
                (rplacd tail (setf tail (list i)))))
@@ -184,9 +184,10 @@ list of symbols to be inserted into final `LOOP'."
                                 "APPEND" "APPENDING" "NCONC" "NCONCING"
                                 "MAXIMIZE" "MAXIMIZING" "MINIMIZE" "MINIMIZING")
                           :test #'same)
-              (cond ((clause 2) (apply #'collect clause))
+              (cond ((clause 2) (collect 1st 2nd))
                     ((clause 3) (collect 1st 2nd :into 3rd))
-                    ((clause 4 (3rd into)) (collect 1st 2nd :into 4th)))
+                    ((clause 4 (3rd into)) (collect 1st 2nd :into 4th))
+                    (t (go do-clauses)))
               (go next-loop))
             1-arg-clauses
             (when (member 1st '("NAMED" "REPEAT" "UNTIL" "WHILE" "ALWAYS" "NEVER" "THEREIS")
@@ -196,12 +197,12 @@ list of symbols to be inserted into final `LOOP'."
             cond-clauses
             (when (>= (length clause) 3)
               (cond ((same (car clause) "WHEN")
-                     (apply #'collect `(:when ,(second clause) ,@(for-collect-clauses (cddr clause) t) :end)))
+                     (apply #'collect `(:when ,2nd ,@(for-collect-clauses (cddr clause) t) :end)))
                     ((same (car clause) "UNLESS")
-                     (apply #'collect `(:unless ,(second clause) ,@(for-collect-clauses (cddr clause) t) :end)))
+                     (apply #'collect `(:unless ,2nd ,@(for-collect-clauses (cddr clause) t) :end)))
                     ((and (= (length clause) 4) (same 1st "IF"))
-                     (apply #'collect `(:if ,(second clause) ,@(for-collect-clauses (list (third clause)) t) :end
-                                         ,@(for-collect-clauses (list (fourth clause) t)) :end)))
+                     (apply #'collect `(:if ,(second clause) ,@(for-collect-clauses (list (third clause)) t)
+                                         :else ,@(for-collect-clauses (list (fourth clause)) t) :end)))
                     (t (go do-clauses)))
               (go next-loop))
             do-clauses
@@ -234,8 +235,12 @@ Example:
     (if (member (first first-clause) '(:do :if :when :unless
                                         :while :until :always :never :thereis :named
                                         :collect :nconc :append :sum :count :maximize :minimize))
-        (for-collect-clauses body)
-      `(,@first-clause :do (cl:loop ,@(for-collect-clauses (rest body)))))))
+        (values (for-collect-clauses body) nil)
+      (multiple-value-bind (rest-clauses next-level-p)
+          (for*-collect-clauses (rest body))
+        (if next-level-p
+            (values `(cl:loop ,@first-clause :do ,rest-clauses) t)
+          (values `(cl:loop ,@first-clause ,@rest-clauses) t))))))
 
 (defmacro for* (&body body)
   "Easy nested FOR loop.
@@ -250,7 +255,7 @@ Example:
         (j :range 10)
         (setf (aref arr i j) 0)))
 ```"
-  (cons 'cl:loop (for*-collect-clauses body)))
+  (for*-collect-clauses body))
 
 (export '(for for* *for-extend-clauses-alist* define-for-extend-clause))
 
