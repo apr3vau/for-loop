@@ -22,6 +22,8 @@ easily nesting, no extra burden.
 
 _*All suitable verb clauses can be wrote in -ing form_
 
+_*We don't provide a variable clause (WITH clause), as using let surrounds will be more clear for reading._
+
 ### Range clause
 
 	(var {range | ranging} n) => loop for var from 0 to (1- n)
@@ -71,9 +73,24 @@ Specially:
 	(thereis i) => thereis i
 	(for (i :range 10) (when i (collect i r))) => loop for i from 0 to (1- 10) when i collect i into r
 
-Just like in the `LOOP`, they can only appear under in parsed form, The following is invalid:
+For extra, we also support the `multiply` clause, similar with `iterate`:
+
+	(for (i :range 1 10) (:multiply i)) => (loop :with #:accumulator45 := 1 :for i :from 1 :to 10 :do (setq #:accumulator45 (* #:accumulator45 i)) :finally (return #:accumulator45))
+
+Just like in the `LOOP`, they can only appear in parsed form, The following is invalid:
 
 	(for (repeat 10) (let ((i (random))) (collect i))) => Undefined operator COLLECT
+
+### Finders
+
+Similar with `iterate`, but can only appear in parsed form (not everywhere).
+
+- **find | finding** *expr* *test* : Evaluate *test*, or funcall it with *expr* if it's a function, and immediatly return expr when the result is non-`nil`.
+
+- **find | finding** *expr* **max | maximize** *test* *\[peak-value | (peak-value peak-num)]*:
+Evaluate *test*, or funcall it with *expr* if it's a function, bind the maximum result to *peak-num*, and correspond value of *expr* to *peak-value*. returns `(values peak-value peak-num)`, if there's no other `finally` clause.
+
+	(find (- i) max (mod i 5)) => (loop :with #:peak-num08 :and #:peak-value09 :and #:value10 :do (setq #:value10 (mod i 5)) :when (or (null #:peak-num08) (> #:value10 #:peak-num08)) :do (setq #:peak-num08 #:value10 #:peak-value09 (- i)) :end :finally (return (values #:peak-value09 #:peak-num08)))
 
 ### Initially / Finally
 
