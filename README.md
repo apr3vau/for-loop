@@ -24,11 +24,14 @@ _*All suitable verb clauses can be wrote in -ing form_
 
 ### Range clause
 
-	(i {range | ranging}) => loop for i from 0
-	(i range 10) => loop for i from 0 to (1- 10)
+	(var {range | ranging} n) => loop for var from 0 to (1- n)
 	(i fixnum range 10) => loop for i of-type fixnum from 0 to (1- 10)
 	(i range 0 10) => loop for i from 0 to 10
 	(i range 0 10 [by] 2) loop for i from 0 to 10 by 2
+
+Specially:
+
+	(i index) | (i range) => loop for i from 0
 
 ### From... To...
 

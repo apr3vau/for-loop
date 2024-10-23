@@ -49,6 +49,10 @@ list of symbols to be inserted into final `LOOP'."
                 when (funcall pred clause)
                     do (apply #'collect (funcall yield clause))
                        (go next-loop))
+            ;; index
+            (when (clause 2 (2nd :index))
+              (collect :for 1st :from 0)
+              (go next-loop))
             ;; range
             (cond ((and (>= (length clause) 2) (same 2nd :range))
                    (cond ((clause 2)
@@ -85,10 +89,10 @@ list of symbols to be inserted into final `LOOP'."
                   (t (go from-to)))
             (go next-loop)
             from-to
-            (when (and (> (length clause) 3) (or (member 2nd '("FROM" "TO" "BY") :test #'same)))
+            (when (and (>= (length clause) 3) (or (member 2nd '("FROM" "TO" "BY") :test #'same)))
               (apply #'collect (cons :for clause))
               (go next-loop))
-            (when (and (> (length clause) 4) (or (member 3rd '("FROM" "TO" "BY") :test #'same)))
+            (when (and (>= (length clause) 4) (or (member 3rd '("FROM" "TO" "BY") :test #'same)))
               (apply #'collect (nconc (list :for 1st :of-type 2nd) (cddr clause)))
               (go next-loop))
             lists
@@ -105,7 +109,7 @@ list of symbols to be inserted into final `LOOP'."
                     ((member 2nd '("HASH-VALUE" "HASH-VALUES" "IN-HASH-VALUE" "IN-HASH-VALUES" "TABLE-VALUES") :test #'same)
                      (collect :for 1st :being :each :hash-value :of 3rd))
                     ((and (clause 4) (member 3rd '("TABLE" "HASHTABLE" "TABLE-PAIRS" "HASH-TABLE" "IN-TABLE" "IN-HASHTABLE" "IN-HASH-TABLE") :test #'same))
-                     (collect :for 1st :being :each :hash-key :of 4th :for 2nd := `(gethash ,1st ,4th)))
+                     (collect :for 1st :being :each :hash-key :of 4th :using `(hash-value ,2nd)))
                     (t (go in)))
               (go next-loop))
             in
