@@ -71,7 +71,7 @@ Specially:
 
 	(named sym) => loop named sym
 	(thereis i) => thereis i
-	(for (i :range 10) (when i (collect i r))) => loop for i from 0 to (1- 10) when i collect i into r
+	(for (i :range 10) (when i (collect i r))) => loop for i from 0 to (1- 10) when i collect i into r end
 
 For extra, we also support the `multiply` clause, similar with `iterate`:
 
@@ -85,12 +85,14 @@ Just like in the `LOOP`, they can only appear in parsed form, The following is i
 
 Similar with `iterate`, but can only appear in parsed form (not everywhere).
 
-- **find | finding** *expr* *test* : Evaluate *test*, or funcall it with *expr* if it's a function, and immediatly return expr when the result is non-`nil`.
+- **{find | finding}** *expr* *test* : Evaluate *test*, or funcall it with *expr* if it's a function, and immediatly return expr when the result is non-`nil`.
 
-- **find | finding** *expr* **max | maximize** *test* *\[peak-value | (peak-value peak-num)]*:
-Evaluate *test*, or funcall it with *expr* if it's a function, bind the maximum result to *peak-num*, and correspond value of *expr* to *peak-value*. returns `(values peak-value peak-num)`, if there's no other `finally` clause.
+- **find | finding** *expr* **{max | maximize | min | minimize}** *test* *\[peak-value | (peak-value peak-num)]*:
+Evaluate *test*, or funcall it with *expr* if it's a function, bind the maximum / minimum result to *peak-num*, and correspond value of *expr* to *peak-value*. returns `(values peak-value peak-num)`, if there's no other `finally` clause.
 
-	(find (- i) max (mod i 5)) => (loop :with #:peak-num08 :and #:peak-value09 :and #:value10 :do (setq #:value10 (mod i 5)) :when (or (null #:peak-num08) (> #:value10 #:peak-num08)) :do (setq #:peak-num08 #:value10 #:peak-value09 (- i)) :end :finally (return (values #:peak-value09 #:peak-num08)))
+```
+(find (- i) max (mod i 5)) => (loop :with #:peak-num08 :and #:peak-value09 :and #:value10 :do (setq #:value10 (mod i 5)) :when (or (null #:peak-num08) (> #:value10 #:peak-num08)) :do (setq #:peak-num08 #:value10 #:peak-value09 (- i)) :end :finally (return (values #:peak-value09 #:peak-num08)))
+```
 
 ### Initially / Finally
 
@@ -99,7 +101,7 @@ Evaluate *test*, or funcall it with *expr* if it's a function, bind the maximum 
 
 ### Conditions
 
-They're processed recursively:
+They're parsed recursively:
 
 	(when i (when (evenp i) (collect i) (sum i r)) (print i)) => loop when i when (evenp i) collect i and sum i into r end end do (print foo)
 
