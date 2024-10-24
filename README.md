@@ -43,7 +43,7 @@ Specially:
 ### Equal... Then...
 
 	(i 10 then (1+ i)) => loop for i = 10 then (1+ i)
-	(i = random) => loop for i = (random)
+	(i = (random)) => loop for i = (random)
 	(i fixnum = 10 then (1+ i)) => loop for i of-type fixnum = 10 then (1+ i)
 
 ### In / On / Across
