@@ -69,7 +69,7 @@ Specially:
 
 ### Accumulation / Termination / Name
 
-	(named sym) => loop named 10
+	(named sym) => loop named sym
 	(thereis i) => thereis i
 	(for (i :range 10) (when i (collect i r))) => loop for i from 0 to (1- 10) when i collect i into r
 
