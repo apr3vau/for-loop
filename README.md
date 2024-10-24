@@ -8,7 +8,7 @@ easily nesting, no extra burden.
 ## Examples
 
 ```common-lisp
-(for (i range 1 10)
+(for (i range 10)
      (prev previous i 0)
      (collect (list prev i)))
 
