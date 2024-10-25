@@ -21,7 +21,7 @@ list of symbols to be inserted into final `LOOP'."
 (defun for-collect-clauses (clauses &optional (andp))
   (let* ((r (list nil))
          (tail r)
-         final-clause last-do-p this-do-p)
+         prev-clauses final-clause last-do-p this-do-p)
     (labels ((collect (&rest items)
                (declare (inline collect))
                (dolist (i (if (and andp (cdr r) (null this-do-p))
@@ -157,14 +157,14 @@ list of symbols to be inserted into final `LOOP'."
                   (t (go previous)))
             (go next-loop)
             previous
-            (cond ((clause 3 (2nd "PREVIOUS"))
-                   (push-forms :for 1st := nil :then 3rd))
-                  ((clause 4 (2nd "PREVIOUS"))
-                   (push-forms :for 1st := 4th :then 3rd))
-                  ((clause 4 (3rd "PREVIOUS"))
-                   (push-forms :for 1st :of-type 2nd := nil :then 4th))
-                  ((clause 5 (3rd "PREVIOUS"))
-                   (push-forms :for 1st :of-type 2nd := 5th :then 4th))
+            (cond ((and (= (length clause) 3) (member 2nd '("PREV" "PREVIOUS") :test #'same))
+                   (push (list 1st := nil :then 3rd) prev-clauses))
+                  ((and (= (length clause) 4) (member 2nd '("PREV" "PREVIOUS") :test #'same))
+                   (push (list 1st := 4th :then 3rd) prev-clauses))
+                  ((and (= (length clause) 4) (member 3rd '("PREV" "PREVIOUS") :test #'same))
+                   (push (list 1st :of-type 2nd := nil :then 4th) prev-clauses))
+                  ((and (= (length clause) 5) (member 3rd '("PREV" "PREVIOUS") :test #'same))
+                   (push (list 1st :of-type 2nd := 5th :then 4th) prev-clauses))
                   (t (go package)))
             (go next-loop)
             package
@@ -265,8 +265,17 @@ list of symbols to be inserted into final `LOOP'."
                   clause (car clauses))
             (when clauses (go start-loop)))))
       (if final-clause
-          (nconc (cdr r) (list :finally final-clause))
-        (cdr r)))))
+          (setq r (nconc (cdr r) (list :finally final-clause)))
+        (setq r (cdr r)))
+      (when prev-clauses
+        (setq r (nconc (loop for i from 0
+                             for forms in prev-clauses
+                             if (= i 0)
+                               collect :for
+                             else collect :and
+                             nconc forms)
+                       r)))
+      r)))
 
 (defmacro for (&body body)
   "FOR macro that expands to LOOP.
