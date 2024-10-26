@@ -102,7 +102,7 @@ list of symbols to be inserted into final `LOOP'."
               (go next-loop))
             lists
             (cond ((clause 4 (3rd "IN-PLIST"))
-                   (collect :for (list 1st 2nd) :on 4th :by #'cddr))
+                   (collect :for (list 1st 2nd) :on 4th :by #+lispworks #'cddr #-lispworks 'cddr))
                   ((clause 4 (3rd "IN-ALIST"))
                    (collect :for (cons 1st 2nd) :on 4th))
                   (t (go tables)))
