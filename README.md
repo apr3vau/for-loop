@@ -29,10 +29,10 @@ We've not included in any package manager yet, so please clone this repo and use
 Some notes:
 
 - All suitable verb clauses can be wrote in -ing form. (uh, except "multiply")
-- We don't provide a variable clause (WITH clause), as using let surrounds will be more clear for reading.
+- We don't provide a variable clause (WITH clause), since using let surrounds will be more clear for reading.
 - We don't provide accumulating support for `FOR*`. Use other specialized utilities like `serapeum:with-collector` will be clearer in that case.
 - We support any type of string designator for loop keywords. Even lowercased string is ok.
- - But we suggest using `KEYWORD` in `FOR-LOOP`, as `KEYWORD`s have special color in editors, so it will be clearer for reading; and `FOR` has reduced large amout of keywords compared with `LOOP`, so it will not burden you to write extra colons. We also produce `KEYWORD`s for loop-keywords in our macro.
+ - But we suggest using `KEYWORD` in `FOR-LOOP`, since `KEYWORD`s have special color in editors, so it will be clearer for reading; and `FOR` has reduced large amout of keywords compared with `LOOP`, so it will not burden you to write extra colons. We also produce `KEYWORD`s for loop-keywords in our macro.
 
 ### Range clause
 
@@ -136,6 +136,17 @@ All other forms are treated as `DO` clauses.
 
 The function `define-for-extend-clause` provides a simple interface to
 extend `FOR` and `FOR*`. See its document for details.
+
+For example, if you want to add a simple `with` clause:
+
+```common-lisp
+(define-for-extend-clause
+ (lambda (clause)
+   (and (= (length clause) 3)
+        (string-equal (car clause) :with)))
+ (lambda (clause)
+   (values nil (list (second clause) := (third clause)))))
+```
 
 By the way, since this macro is very simple, you can easily redefining
 the macros and core function (`for-collect-clauses`) with your own

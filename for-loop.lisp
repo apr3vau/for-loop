@@ -16,8 +16,13 @@ The predicate and yield functions will be called with current clause
 form (e.g. `(i from 1 to 10)'), The predicate function should return
 true if the form is matched, then the yield function should return 5
 values: The list of symbols to be added to the INITIALLY clause, WITH
-clause, FOR clause, BODY clause, and FINALLY clause."
-  (push (cons predicate-function yield-function) *for-extend-clauses-alist*))
+clause, FOR clause, BODY clause, and FINALLY clause.
+
+Note that for WITH and FOR clauses, you must remove the :WITH or :FOR
+keywords in front of them. The parse function will automatically add
+it for each clause."
+  (pushnew (cons predicate-function yield-function) *for-extend-clauses-alist*
+           :test #'equal))
 
 (defun for-collect-clauses (clauses &optional andp)
   (let (init-clauses with-clauses prev-clauses for-clauses body-clauses final-clause
