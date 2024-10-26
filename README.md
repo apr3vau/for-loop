@@ -183,11 +183,11 @@ Then we tried Shinmera's `For`. It's way more better, especially the
 
 The result:
 
-|         | SBCL  | LispWorks |
-| ------- | ----- | --------- |
-| for     | 0.207 | 54.133    |
-| iterate | 0.421 | 14.912    |
-| loop    | 0.165 | 12.521    |
+|         | SBCL  | LispWorks (compiled) | LispWorks (eval) |
+| ------- | ----- | -------------------- | ---------------- |
+| for     | 0.207 | 0.251                | 54.133           |
+| iterate | 0.421 | 0.622                | 14.912           |
+| loop    | 0.165 | 0.175                | 12.521           |
 
 Although the result is highly implementation-dependent, and the
 compilation can make differences, we still not very satisfy with it.
