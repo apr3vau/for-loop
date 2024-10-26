@@ -1,4 +1,4 @@
-# FOR using LOOP
+# FOR-LOOP
 
 Easy `FOR` macro that expands to `LOOP`.
 
@@ -18,13 +18,21 @@ easily nesting, no extra burden.
       (print key))
 ```
 
+## Usage
+
+We've not included in any package manager yet, so please clone this repo and use:
+
+	(asdf:load-system :for-loop)
+
 ## Clauses
 
-Some notice:
+Some notes:
 
-- All suitable verb clauses can be wrote in -ing form
+- All suitable verb clauses can be wrote in -ing form. (uh, except "multiply")
 - We don't provide a variable clause (WITH clause), as using let surrounds will be more clear for reading.
-- We support any type of string designator for loop keywords. Using lowercase string is also allowed. But we suggest using `KEYWORD` in `FOR`, as `KEYWORD`s have special color in editors, so it will be clearer for reading; and `FOR` has reduced large amout of keywords compared with `LOOP`, so it will not burden you to write extra colons. We also produce `KEYWORD`s for loop-keywords in our macro.
+- We don't provide accumulating support for `FOR*`. Use other specialized utilities like `serapeum:with-collector` will be clearer in that case.
+- We support any type of string designator for loop keywords. Even lowercased string is ok.
+ - But we suggest using `KEYWORD` in `FOR-LOOP`, as `KEYWORD`s have special color in editors, so it will be clearer for reading; and `FOR` has reduced large amout of keywords compared with `LOOP`, so it will not burden you to write extra colons. We also produce `KEYWORD`s for loop-keywords in our macro.
 
 ### Range clause
 
@@ -51,7 +59,7 @@ Specially:
 ### In / On / Across
 
 	(i fixnum :in list [:by func]) => loop :for i :of-type fixnum :in list :by func
-	((i j . k) :on list [by func]) => loop :for (i j . k) :on list :by func
+	((i j . k) :on list [:by func]) => loop :for (i j . k) :on list :by func
 	(c character :across "string") => loop :for c :of-type character :across "string"
 
 ### Plist / Alist
@@ -81,7 +89,6 @@ Grammar: *var* **{prev | previous}** *target* *[initial-value]*
 
 	(:named sym) => loop :named sym
 	(:thereis i) => :thereis i
-	(for (i :range 10) (when i (collect i r))) => loop :for i :from 0 :to (1- 10) :when i :collect i :into r :end
 
 For extra, we also support the `multiply` clause, similar with `iterate`:
 
@@ -91,9 +98,13 @@ Just like in the `LOOP`, they can only appear in parsed form, The following is i
 
 	(for (:repeat 10) (let ((i (random))) (collect i))) => Undefined operator COLLECT
 
+Clauses that have only `IF`, `WHEN` and `UNLESS` in their parent forms are okay, since the `IF`, `WHEN` and `UNLESS` will be parsed into loop keywords recursively (see the "Condition" below).
+
+	(for (i :range 10) (when i (collect i r))) => loop :for i :from 0 :to (1- 10) :when i :collect i :into r :end
+
 ### Finders
 
-Similar with `iterate`, but can only appear in parsed form (not everywhere).
+Similar with `iterate`, but also can only appear in parsed form (not everywhere).
 
 - **{find | finding}** *expr* *test* : Evaluate *test*, or funcall it with *expr* if it's a function, and immediatly return expr when the result is non-`nil`.
 
@@ -101,7 +112,7 @@ Similar with `iterate`, but can only appear in parsed form (not everywhere).
 Evaluate *test*, or funcall it with *expr* if it's a function, bind the maximum / minimum result to *peak-num*, and correspond value of *expr* to *peak-value*. returns `(values peak-value peak-num)`, if there's no other `finally` clause.
 
 ```
-(:find (- i) :max (mod i 5)) => (loop :with #:peak-num08 :and #:peak-value09 :and #:value10 :do (setq #:value10 (mod i 5)) :when (or (null #:peak-num08) (> #:value10 #:peak-num08)) :do (setq #:peak-num08 #:value10 #:peak-value09 (- i)) :end :finally (return (values #:peak-value09 #:peak-num08)))
+(:find (- i) :max (mod i 5)) => (loop :with #:peak-num-08 :and #:peak-value-09 :and #:value-10 :do (setq #:value-10 (mod i 5)) :when (or (null #:peak-num-08) (> #:value10 #:peak-num-08)) :do (setq #:peak-num-08 #:value-10 #:peak-value-09 (- i)) :end :finally (return (values #:peak-value-09 #:peak-num-08)))
 ```
 
 ### Initially / Finally
