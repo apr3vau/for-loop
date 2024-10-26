@@ -189,8 +189,8 @@ The result:
 | iterate | 0.421 | 0.622                | 14.912           |
 | loop    | 0.165 | 0.175                | 12.521           |
 
-Although the result is highly implementation-dependent, and the
-compilation can make differences, we still not very satisfy with it.
+Although the result may depends on use-case and implementation, we
+still not very satisfy with it.
 
 So, yeah, `LOOP` is fairly powerful enough, many of those syntax suger
 can be implemented just using `LOOP`, and it has the foremost support
@@ -207,12 +207,6 @@ invoked during macro expansion, so we rewroted it using tree-shaped
 matching based on pure CL functions. It becomes much difficult to
 read, but still acceptable for us to maintain, at least compared to a
 bunch of `LOOP`s :P
-
-PS: another interesting problem during testing: As you can see above,
-SBCL is much faster than LispWorks when executing the test code. But,
-when we tried to execute the same code second time, SBCL gave us a
-`Heap exhausted during garbage collection` and directly thrown us to
-LDB. It's ... em, interesting ....
 
 ## Acknowledgement
 
