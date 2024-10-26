@@ -3,7 +3,7 @@
 Easy `FOR` macro that expands to `LOOP`.
 
 Zero dependencies, extremely lightweight (<350 lines in a single file), directly expands to `LOOP`,
-easily nesting, open-sourced with 0BSD.
+least keywords, easily nesting, open-sourced with 0BSD.
 
 ## Examples
 
