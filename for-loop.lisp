@@ -107,7 +107,7 @@ it for each clause."
               (go next-loop))
             lists
             (cond ((clause 4 (3rd "IN-PLIST"))
-                   (add for-clauses (list (list 1st 2nd) :on 4th :by #+lispworks #'cddr #-lispworks 'cddr)))
+                   (add for-clauses (list (list 1st 2nd) :on 4th :by '(function cddr))))
                   ((clause 4 (3rd "IN-ALIST"))
                    (add for-clauses (list (cons 1st 2nd) :on 4th)))
                   (t (go tables)))
