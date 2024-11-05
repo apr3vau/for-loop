@@ -24,7 +24,7 @@ it for each clause."
   (pushnew (cons predicate-function yield-function) *for-extend-clauses-alist*
            :test #'equal))
 
-(defun for-collect-clauses (clauses &optional andp)
+(defun for-collect-clauses-1 (clauses &optional andp)
   (let (init-clauses with-clauses prev-clauses for-clauses body-clauses final-clause
          last-do-p this-do-p)
     (flet ((same (s1 s2)
@@ -43,7 +43,7 @@ it for each clause."
                      (nconc `(and (= (length clause) ,clause-length))
                             (loop for (val1 val2) in sames collect `(same ,val1 ',val2))))
                    (add (pos syms)
-                     `(setf ,pos (nconc ,pos (list (if (and andp ,pos (null this-do-p))
+                     `(setf ,pos (nconc ,pos (list (if (and andp ,(eq pos 'body-clauses) ,pos (null this-do-p))
                                                        (cons :and ,syms)
                                                      ,syms))))))
           (prog ((clause (car clauses)))
@@ -53,9 +53,9 @@ it for each clause."
                   when (funcall pred clause)
                     do (multiple-value-bind (init with for body final)
                            (funcall yield clause)
-                         (when init (add init-clauses init))
-                         (when with (add with-clauses with))
-                         (when for (add for-clauses for))
+                         (when init (setq init-clauses (nconc init-clauses init)))
+                         (when with (setq with-clauses (nconc with-clauses with)))
+                         (when for (setq for-clauses (nconc for-clauses for)))
                          (when body (add body-clauses body))
                          (when final (setq final-clause final)))
                        (go next-loop))
@@ -224,16 +224,27 @@ it for each clause."
                                         (if (listp 5th) (first 5th) 5th)
                                       (gensym "PEAK-VALUE-")))
                         (value (gensym "VALUE-")))
-                    (add with-clauses (list peak-num :and peak-value :and value))
+                    (add with-clauses (list peak-num))
+                    (add with-clauses (list peak-value))
+                    (add with-clauses (list value))
                     (add body-clauses
-                         (list :do (list 'setq value (if (and (listp 4th) (eq (car 4th) 'function))
-                                                         (funcall 4th 2nd)
-                                                       4th))
-                               :when (list 'or (list 'null peak-num)
-                                           (list (if (member 3rd '("MAX" "MAXIMIZE" "MAXIMIZING") :test #'same)
-                                                     '> '<)
-                                                 value peak-num))
-                               :do (list 'setq peak-num value peak-value 2nd) :end))
+                         (if andp
+                             (list :do (list 'setq value (if (and (listp 4th) (eq (car 4th) 'function))
+                                                             (funcall 4th 2nd)
+                                                           4th))
+                                   :and :when (list 'or (list 'null peak-num)
+                                                    (list (if (member 3rd '("MAX" "MAXIMIZE" "MAXIMIZING") :test #'same)
+                                                              '> '<)
+                                                          value peak-num))
+                                   :do (list 'setq peak-num value peak-value 2nd) :end)
+                           (list :do (list 'setq value (if (and (listp 4th) (eq (car 4th) 'function))
+                                                           (funcall 4th 2nd)
+                                                         4th))
+                                 :when (list 'or (list 'null peak-num)
+                                             (list (if (member 3rd '("MAX" "MAXIMIZE" "MAXIMIZING") :test #'same)
+                                                       '> '<)
+                                                   value peak-num))
+                                 :do (list 'setq peak-num value peak-value 2nd) :end)))
                     (unless final-clause
                       (setq final-clause (list 'return (list 'values peak-value peak-num)))))
                 (progn
@@ -251,13 +262,43 @@ it for each clause."
             cond-clauses
             (when (>= (length clause) 3)
               (cond ((same (car clause) "WHEN")
-                     ;; Using Backquote here will cause variable leaking problem on LispWorks
-                     (add body-clauses (nconc (list :when 2nd) (for-collect-clauses (cddr clause) t) (list :end))))
+                     (multiple-value-bind (init prev with for body final)
+                         (for-collect-clauses-1 (cddr clause) t)
+                       (when init (setq init-clauses (nconc init-clauses init)))
+                       (when prev (setq prev-clauses (nconc prev-clauses prev)))
+                       (when with (setq with-clauses (nconc with-clauses with)))
+                       (when for (setq for-clauses (nconc for-clauses for)))
+                       (when body (add body-clauses (nconc (list :when 2nd) body (list :end))))
+                       (when final (setq final-clause final))))
                     ((same (car clause) "UNLESS")
-                     (add body-clauses (nconc (list :unless 2nd) (for-collect-clauses (cddr clause) t) (list :end))))
+                     (multiple-value-bind (init prev with for body final)
+                         (for-collect-clauses-1 (cddr clause) t)
+                       (when init (setq init-clauses (nconc init-clauses init)))
+                       (when prev (setq prev-clauses (nconc prev-clauses prev)))
+                       (when with (setq with-clauses (nconc with-clauses with)))
+                       (when for (setq for-clauses (nconc for-clauses for)))
+                       (when body (add body-clauses (nconc (list :unless 2nd) body (list :end))))
+                       (when final (setq final-clause final))))
                     ((and (= (length clause) 4) (same 1st "IF"))
-                     (add body-clauses (nconc (list :if (second clause)) (for-collect-clauses (list (third clause)) t)
-                                              (list :else) (for-collect-clauses (list (fourth clause)) t) (list :end))))
+                     (let (if-then if-else)
+                       (multiple-value-bind (init prev with for body final)
+                           (for-collect-clauses-1 (list (third clause)) t)
+                         (when init (setq init-clauses (nconc init-clauses init)))
+                         (when prev (setq prev-clauses (nconc prev-clauses prev)))
+                         (when with (setq with-clauses (nconc with-clauses with)))
+                         (when for (setq for-clauses (nconc for-clauses for)))
+                         (when body (setq if-then body))
+                         (when final (setq final-clause final)))
+                       (multiple-value-bind (init prev with for body final)
+                           (for-collect-clauses-1 (list (fourth clause)) t)
+                         (when init (setq init-clauses (nconc init-clauses init)))
+                         (when prev (setq prev-clauses (nconc prev-clauses prev)))
+                         (when with (setq with-clauses (nconc with-clauses with)))
+                         (when for (setq for-clauses (nconc for-clauses for)))
+                         (when body (setq if-else body))
+                         (when final (setq final-clause final)))
+                       (add body-clauses (nconc (list :if (second clause)) if-then
+                                                (list :else) if-else (list :end)))))
                     (t (go do-clauses)))
               (go next-loop))
             do-clauses
@@ -271,19 +312,25 @@ it for each clause."
             (setq clauses (rest clauses)
                   clause (car clauses))
             (when clauses (go start-loop)))))
-      (setq with-clauses (mapcan (lambda (list) (cons :with list)) with-clauses)
-            for-clauses (mapcan (lambda (list) (cons :for list)) for-clauses))
-      (when prev-clauses
-        (setq for-clauses (nconc (loop for i from 0
-                                       for forms in prev-clauses
-                                       if (= i 0)
-                                         collect :for
-                                       else collect :and
-                                       nconc forms)
-                                 for-clauses)))
-      (nconc (when init-clauses (list :init (list 'progn init-clauses)))
-             with-clauses for-clauses (apply #'nconc body-clauses)
-             (when final-clause (list :finally final-clause))))))
+      (values init-clauses prev-clauses with-clauses for-clauses (apply #'nconc body-clauses) final-clause)
+      )))
+
+(defun for-collect-clauses (body)
+  (multiple-value-bind (init-clauses prev-clauses with-clauses for-clauses body-clauses final-clause)
+      (for-collect-clauses-1 body)
+    (setq with-clauses (mapcan (lambda (list) (cons :with list)) with-clauses)
+          for-clauses (mapcan (lambda (list) (cons :for list)) for-clauses))
+    (when prev-clauses
+      (setq for-clauses (nconc (loop for i from 0
+                                     for forms in prev-clauses
+                                     if (= i 0)
+                                       collect :for
+                                     else collect :and
+                                     nconc forms)
+                               for-clauses)))
+    (nconc (when init-clauses (list :init (list 'progn init-clauses)))
+           with-clauses for-clauses body-clauses
+           (when final-clause (list :finally final-clause)))))
 
 (defmacro for (&body body)
   "FOR macro that expands to LOOP.
